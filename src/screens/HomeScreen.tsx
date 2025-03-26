@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from "react";
+
+import { hs, vs, ms } from '../utils/responsive';
+
 import {
   View,
   TextInput,
@@ -102,8 +105,28 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
-        <Text style={styles.title}>Cyber Tasks</Text>
-        <View style={styles.filterContainer}>
+        <Text style={styles.title}>Minhas Tarefas</Text>
+
+        <Text style={styles.subtitle}>Gerencie suas atividades</Text>
+
+      </View>
+
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={taskInput}
+          onChangeText={setTaskInput}
+          placeholder="Adicionar nova tarefa"
+          placeholderTextColor={theme.colors.completedText}
+          onSubmitEditing={addTask}
+        />
+        <TouchableOpacity style={styles.addButton} onPress={addTask}>
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+      </View>
+
+      
+      <View style={styles.filterContainer}>
           <TouchableOpacity
             style={[
               styles.filterButton,
@@ -123,21 +146,6 @@ const HomeScreen = () => {
             <Text style={styles.filterText}>Tipo</Text>
           </TouchableOpacity>
         </View>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={taskInput}
-          onChangeText={setTaskInput}
-          placeholder="Nova tarefa"
-          placeholderTextColor={theme.colors.completedText}
-          onSubmitEditing={addTask}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={addTask}>
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
 
       <DraggableFlatList
         data={filteredTasks()}
@@ -186,18 +194,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    //padding: theme.spacing.m,
-    paddingVertical: 32,
-    paddingHorizontal: 50,
+    paddingVertical: vs(32),
+    paddingHorizontal: hs(24),
   },
   header: {
     marginBottom: theme.spacing.l,
   },
   title: {
-    color: theme.colors.primary,
+    color: theme.colors.text,
     fontSize: 32,
     fontWeight: "bold",
-    textTransform: "uppercase",
+  },
+  subtitle: {
+    color: theme.colors.completedText,
+    fontSize: 16,
   },
   inputContainer: {
     flexDirection: "row",

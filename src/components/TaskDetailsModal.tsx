@@ -36,6 +36,11 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
       transparent
       onRequestClose={onClose}
     >
+        <TouchableOpacity 
+    style={styles.modalOverlay}
+    activeOpacity={1} // Mantém a opacidade em 1 para não mostrar efeito visual
+    onPressOut={onClose} // Fecha o modal ao clicar fora
+  >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Detalhes da Task</Text>
@@ -127,19 +132,17 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           </View>
         </View>
       </View>
+      </TouchableOpacity>
     </Modal>
   );
 };
-
-// Resto do código (styles)...
 
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
-    //padding: theme.spacing.m,
-    paddingVertical: 32, // assuming 1rem = 16px
+
     paddingHorizontal: 50,
   },
   modalContent: {

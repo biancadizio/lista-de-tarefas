@@ -1,4 +1,7 @@
 // src/theme.ts
+
+import { hs, vs, ms } from './utils/responsive';
+
 export const theme = {
   colors: {
     background: '#0A0A0A',
@@ -17,13 +20,18 @@ export const theme = {
     'no-urgency': '#00FF88',
   },
   spacing: {
-    s: 8,
-    m: 16,
-    l: 24,
+    s: vs(8),   // Usa verticalScale para padding/margin vertical
+    m: vs(16),
+    l: vs(24),
   },
   radii: {
-    s: 4,
-    m: 8,
-    l: 16,
+    s: hs(4),   // Usa horizontalScale para bordas
+    m: hs(8),
+    l: hs(16),
+  },
+  fontSize: {
+    small: ms(12),
+    medium: ms(16),
+    large: ms(24),
   },
 };

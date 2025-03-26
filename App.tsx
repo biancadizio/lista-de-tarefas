@@ -27,7 +27,7 @@ const App = () => {
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{ title: "Cyber Tasks" }}
+          options={{ title: "Gerenciador de Tarefas" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
