@@ -72,17 +72,20 @@ const HomeScreen = () => {
     AsyncStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  const addTask = () => {
-    if (taskInput.trim()) {
-      const newTask: Task = {
-        id: Date.now(),
-        title: taskInput.trim(),
-        completed: false,
-      };
-      setTasks([...tasks, newTask]);
-      setTaskInput("");
-    }
-  };
+const addTask = () => {
+  if (taskInput.trim()) {
+    const newTask: Task = {
+      id: Date.now(),
+      title: taskInput.trim(),
+      completed: false,
+      priority: "no-urgency", // Valor padrão
+      type: "others", // Valor padrão
+    };
+    setTasks([...tasks, newTask]);
+    setTaskInput("");
+    setFilter(null); // Resetar filtros
+  }
+};
 
   const removeTask = (id: number) => {
     setTasks(tasks.filter((task) => task.id !== id));
@@ -96,10 +99,19 @@ const HomeScreen = () => {
     );
   };
 
-  const filteredTasks = () => {
-    if (!filter) return tasks;
-    return tasks.filter((task) => task[filter as keyof Task]);
-  };
+const filteredTasks = () => {
+  if (!filter) return tasks;
+  
+  if (filter === "priority") {
+    return tasks.filter((task) => task.priority && task.priority !== "no-urgency");
+  }
+  
+  if (filter === "type") {
+    return tasks.filter((task) => task.type && task.type !== "others");
+  }
+  
+  return tasks;
+};
 
   return (
     <View style={styles.container}>
@@ -126,26 +138,37 @@ const HomeScreen = () => {
       </View>
 
       
-      <View style={styles.filterContainer}>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "priority" && styles.activeFilter,
-            ]}
-            onPress={() => setFilter(filter === "priority" ? null : "priority")}
-          >
-            <Text style={styles.filterText}>Prioridade</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "type" && styles.activeFilter,
-            ]}
-            onPress={() => setFilter(filter === "type" ? null : "type")}
-          >
-            <Text style={styles.filterText}>Tipo</Text>
-          </TouchableOpacity>
-        </View>
+<View style={styles.filterContainer}>
+  <TouchableOpacity
+    style={[
+      styles.filterButton,
+      filter === "priority" && styles.activeFilter,
+    ]}
+    onPress={() => setFilter(filter === "priority" ? null : "priority")}
+  >
+    <Text style={[
+      styles.filterText,
+      filter === "priority" && styles.activeFilterText
+    ]}>
+      Prioridade
+    </Text>
+  </TouchableOpacity>
+  
+  <TouchableOpacity
+    style={[
+      styles.filterButton,
+      filter === "type" && styles.activeFilter,
+    ]}
+    onPress={() => setFilter(filter === "type" ? null : "type")}
+  >
+    <Text style={[
+      styles.filterText,
+      filter === "type" && styles.activeFilterText
+    ]}>
+      Tipo
+    </Text>
+  </TouchableOpacity>
+</View>
 
       <DraggableFlatList
         data={filteredTasks()}
@@ -244,20 +267,24 @@ const styles = StyleSheet.create({
     gap: theme.spacing.s,
     marginTop: theme.spacing.m,
   },
-  filterButton: {
-    padding: theme.spacing.s,
-    borderRadius: theme.radii.m,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  activeFilter: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  filterText: {
-    color: theme.colors.text,
-    fontSize: 12,
-  },
+filterButton: {
+  padding: theme.spacing.s,
+  borderRadius: theme.radii.m,
+  borderWidth: 1,
+  borderColor: theme.colors.border,
+  backgroundColor: theme.colors.inputBackground,
+},
+activeFilter: {
+  backgroundColor: theme.colors.primary,
+  borderColor: theme.colors.primary,
+},
+filterText: {
+  color: theme.colors.text,
+  fontSize: 12,
+},
+activeFilterText: {
+  color: theme.colors.background,
+},
 });
 
 export default HomeScreen;
