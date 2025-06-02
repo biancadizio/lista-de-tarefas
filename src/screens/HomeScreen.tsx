@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
+import { View, Text, ScrollView } from 'react-native';
+import Calendar from './components/Calendar';
 
 import { hs, vs, ms } from '../utils/responsive';
 
 import {
-  View,
+  //View,
   TextInput,
   StyleSheet,
   TouchableOpacity,
-  Text,
+  //Text,
   StatusBar,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -186,6 +188,13 @@ const HomeScreen = () => {
         onClose={() => setModalVisible(false)}
         allTasks={tasks}
       />
+      <ScrollView style={{ flex: 1 }}>
+      <Text style={{ fontSize: 24, textAlign: 'center', marginVertical: 20 }}>
+        Lista de Tarefas
+      </Text>
+
+      <CalendarView tasks={tasks} />
+    </ScrollView>
     </View>
   );
 };
