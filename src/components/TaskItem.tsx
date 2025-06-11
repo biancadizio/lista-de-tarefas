@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../theme";
 
+
 type ThemeColors = keyof typeof theme.colors;
 
 interface Task {
