@@ -16,6 +16,8 @@ import { fetchInitialTasks } from "../services/api";
 import { theme } from "../theme";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import TaskDetailsModal from "../components/TaskDetailsModal";
+import SearchInput from "../components/SearchBar";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export interface Task {
   id: number;
@@ -49,7 +51,7 @@ const HomeScreen = () => {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
-
+  const [searchQuery, setSearchQuery] = useState<string>("");
   useEffect(() => {
     const initializeTasks = async () => {
       try {
@@ -97,12 +99,14 @@ const HomeScreen = () => {
   };
 
   const filteredTasks = () => {
-    if (!filter) return tasks;
-    return tasks.filter((task) => task[filter as keyof Task]);
+    let nameSearchedTasks: Task[] = tasks.filter(task =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    if(!filter) return nameSearchedTasks;
+    return nameSearchedTasks.filter((task) => task[filter as keyof Task]);
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.title}>Minhas Tarefas</Text>
@@ -110,6 +114,12 @@ const HomeScreen = () => {
         <Text style={styles.subtitle}>Gerencie suas atividades</Text>
 
       </View>
+      <SearchInput
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Pesquisar tarefas..."
+        placeholderTextColor={theme.colors.completedText}
+      />
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -145,7 +155,7 @@ const HomeScreen = () => {
           >
             <Text style={styles.filterText}>Tipo</Text>
           </TouchableOpacity>
-        </View>
+      </View>
 
       <DraggableFlatList
         data={filteredTasks()}
@@ -163,7 +173,7 @@ const HomeScreen = () => {
         )}
         keyExtractor={(item) => item.id.toString()}
         onDragEnd={({ data }) => setTasks(data)}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, {flexGrow: 1}]}
       />
 
       <TaskDetailsModal
@@ -186,7 +196,7 @@ const HomeScreen = () => {
         onClose={() => setModalVisible(false)}
         allTasks={tasks}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
