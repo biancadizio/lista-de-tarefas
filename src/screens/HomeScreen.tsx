@@ -52,6 +52,7 @@ const HomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+
   useEffect(() => {
     const initializeTasks = async () => {
       try {
@@ -74,6 +75,7 @@ const HomeScreen = () => {
     AsyncStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
+
   const addTask = () => {
     if (taskInput.trim()) {
       const newTask: Task = {
@@ -90,11 +92,38 @@ const HomeScreen = () => {
     setTasks(tasks.filter((task) => task.id !== id));
   };
 
+
+  const addLog = async (log: { id: string; taskId: number; action: string; timestamp: number }) => {
+  try {
+    const existing = await AsyncStorage.getItem("taskLogs");
+    const logs = existing ? JSON.parse(existing) : [];
+    logs.push(log);
+    await AsyncStorage.setItem("taskLogs", JSON.stringify(logs));
+  } catch (e) {
+    console.error("Error saving log:", e);
+  }
+};
+
   const toggleTask = (id: number) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
+    setTasks((prevTasks) =>
+      prevTasks.map((task) => {
+        if (task.id === id) {
+          const completed = !task.completed;
+
+          //Logar tarefa
+          if (completed) {
+            addLog({
+              id: Date.now().toString(),
+              taskId: id,
+              action: "completed",
+              timestamp: Date.now(),
+            });
+          }
+
+          return { ...task, completed };
+        }
+        return task;
+      })
     );
   };
 
