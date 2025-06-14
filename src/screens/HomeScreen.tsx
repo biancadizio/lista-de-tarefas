@@ -18,11 +18,15 @@ import DraggableFlatList from "react-native-draggable-flatlist";
 import TaskDetailsModal from "../components/TaskDetailsModal";
 import SearchInput from "../components/SearchBar";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../App"; // path to where you defined the type
+
+
 
 export interface Task {
   id: number;
   title: string;
-  completed: boolean;
   selected?: boolean;
   priority?:
     | "text"
@@ -45,6 +49,7 @@ export interface Task {
   relatedTasks?: number[];
 }
 
+
 const HomeScreen = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskInput, setTaskInput] = useState("");
@@ -52,7 +57,7 @@ const HomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
-
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, "Home">>();
   useEffect(() => {
     const initializeTasks = async () => {
       try {
@@ -81,50 +86,60 @@ const HomeScreen = () => {
       const newTask: Task = {
         id: Date.now(),
         title: taskInput.trim(),
-        completed: false,
       };
       setTasks([...tasks, newTask]);
       setTaskInput("");
     }
   };
 
+  const addLog = async (log: { id: string; taskId: number; action: string, title: string; timestamp: number }) => {
+    try {
+      const existing = await AsyncStorage.getItem("taskLogs");
+      const logs = existing ? JSON.parse(existing) : [];
+      logs.push(log);
+      await AsyncStorage.setItem("taskLogs", JSON.stringify(logs));
+    } catch (e) {
+      console.error("Error saving log:", e);
+    }
+  };
+
   const removeTask = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    setTasks((prevTasks) => {
+      const taskToComplete = prevTasks.find((task) => task.id === id);
+      if (!taskToComplete) return prevTasks;
+
+      // Logar
+      addLog({
+        id: Date.now().toString(),
+        taskId: id,
+        title: taskToComplete.title,
+        action: "deleted",
+        timestamp: Date.now(),
+      });
+
+      // Remover da lista
+      return prevTasks.filter((task) => task.id !== id);
+    });
   };
 
 
-  const addLog = async (log: { id: string; taskId: number; action: string; timestamp: number }) => {
-  try {
-    const existing = await AsyncStorage.getItem("taskLogs");
-    const logs = existing ? JSON.parse(existing) : [];
-    logs.push(log);
-    await AsyncStorage.setItem("taskLogs", JSON.stringify(logs));
-  } catch (e) {
-    console.error("Error saving log:", e);
-  }
-};
-
   const toggleTask = (id: number) => {
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => {
-        if (task.id === id) {
-          const completed = !task.completed;
+    setTasks((prevTasks) => {
+      const taskToComplete = prevTasks.find((task) => task.id === id);
+      if (!taskToComplete) return prevTasks;
 
-          //Logar tarefa
-          if (completed) {
-            addLog({
-              id: Date.now().toString(),
-              taskId: id,
-              action: "completed",
-              timestamp: Date.now(),
-            });
-          }
+      // Logar
+      addLog({
+        id: Date.now().toString(),
+        taskId: id,
+        title: taskToComplete.title,
+        action: "completed",
+        timestamp: Date.now(),
+      });
 
-          return { ...task, completed };
-        }
-        return task;
-      })
-    );
+      // Remover da lista
+      return prevTasks.filter((task) => task.id !== id);
+    });
   };
 
   const filteredTasks = () => {
@@ -137,6 +152,10 @@ const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <TouchableOpacity style={styles.navigationButton} onPress={() => navigation.navigate("Logs")}>
+        <Text style={styles.navigationButtonText}>Ver Log</Text>
+      </TouchableOpacity>
+
       <View style={styles.header}>
         <Text style={styles.title}>Minhas Tarefas</Text>
 
@@ -211,7 +230,6 @@ const HomeScreen = () => {
           selectedTask || {
             id: 0,
             title: "",
-            completed: false,
             priority: "no-urgency",
             type: "others",
           }
@@ -297,6 +315,17 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 12,
   },
+  navigationButton: {
+    backgroundColor: theme.colors.secondary,
+    borderRadius: theme.radii.s,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start', // prevent it from stretching full width
+  },
+  navigationButtonText: {
+    color: theme.colors.text,
+    fontSize: 16,
+  }
 });
 
 export default HomeScreen;
