@@ -2,15 +2,16 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../theme";
 
+
 type ThemeColors = keyof typeof theme.colors;
 
 interface Task {
   id: number;
   title: string;
-  completed: boolean;
   selected?: boolean;
   priority?: ThemeColors;
-  type?: string;
+  category?: string; 
+  recurrence?: string;
   dueDate?: string;
   details?: string;
   relatedTasks?: number[];
@@ -41,10 +42,10 @@ const TaskItem: React.FC<TaskItemProps> = ({
       ]}
     >
       <TouchableOpacity onPress={onToggle} style={styles.checkBox}>
-        <Text style={styles.checkIcon}>{task.completed ? "✓" : "○"}</Text>
+        <Text style={styles.checkIcon}>{"✓"}</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.taskText, task.completed && styles.completed]}>
+      <Text style={[styles.taskText, /*styles.completed*/]}>
         {task.title}
       </Text>
 
@@ -131,3 +132,8 @@ const styles = StyleSheet.create({
 });
 
 export default TaskItem;
+
+
+
+
+

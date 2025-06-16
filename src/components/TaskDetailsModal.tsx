@@ -1,6 +1,15 @@
 // src/components/TaskDetailsModal.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Pressable,
+  Platform,
+} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../theme';
@@ -14,34 +23,83 @@ interface TaskDetailsModalProps {
   allTasks: Task[];
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ 
-  visible, 
-  task, 
-  onSave, 
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
+  visible,
+  task,
+  onSave,
   onClose,
-  allTasks
+  allTasks,
 }) => {
-  const [formData, setFormData] = useState<Task>(task);
+  const [formData, setFormData] = useState<Task>(task);  
+  const [customValue, setCustomValue] = useState(''); // Armazena valor personalizado digitado pelo usuário (em dias)
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Atualiza o formData sempre que a prop task mudar
+  // Quando o modal abre, inicializa os estados
   useEffect(() => {
     setFormData(task);
+
+    // Se a task tiver um tipo não padronizado, tratamos como ''
+    if (!['0', '1', '7', '30', '180', '365'].includes(task.recurrence || '')) {
+      setCustomValue(task.recurrence || '');
+      setFormData((prev) => ({ ...prev, recurrence: ''}));
+    } else {
+      setCustomValue('');
+    }
   }, [task]);
 
+  // Lida com a seleção no Picker
+  const handlePickerChange = (value: string) => {
+    setFormData({ ...formData, recurrence: value });
+
+    // Se a escolha for 'custom', deixamos o valor anterior como está
+    if (value !== 'custom') {
+      setCustomValue('');
+    }
+  };
+  
+  // Atualiza valor personalizado manualmente digitado
+  const handleCustomValueChange = (value: string) => {
+    setCustomValue(value);
+  };
+
+ 
+  // Ao salvar, se for personalizado, usamos customValue como type
+  const handleSave = () => {
+    const finalType =
+      formData.recurrence === 'custom' && !isNaN(parseInt(customValue))
+        ? parseInt(customValue).toString()
+        : formData.recurrence;
+
+    onSave({ ...formData, recurrence: finalType });
+  };
+
+
+  const handleClose = () => {
+    setFormData(task); // Reset form to original task data
+    setCustomValue('');
+    onClose(); // Close modal
+  };
+
+  // Helper for web input value format (yyyy-mm-dd)
+  const getWebDateValue = () => {
+    if (!formData.dueDate) return '';
+    // ISO string is like 2023-05-10T00:00:00.000Z - we want just yyyy-mm-dd
+    return formData.dueDate.split('T')[0];
+  };
+
+  // Ver questão da periodicidade
+  
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent
-      onRequestClose={onClose}
+      transparent={true}
+      onRequestClose={handleClose}
     >
-        <TouchableOpacity 
-    style={styles.modalOverlay}
-    activeOpacity={1} // Mantém a opacidade em 1 para não mostrar efeito visual
-    onPressOut={onClose} // Fecha o modal ao clicar fora
-  >
       <View style={styles.modalOverlay}>
+        {/* Press outside modal to close */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Detalhes da Task</Text>
 
@@ -67,32 +125,56 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <Picker.Item label="Sem Urgência" value="no-urgency" />
           </Picker>
 
-          <TouchableOpacity 
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={styles.dateButtonText}>
-              {formData.dueDate 
-                ? new Date(formData.dueDate).toLocaleDateString() 
-                : "Selecionar Data"}
-            </Text>
-          </TouchableOpacity>
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={formData.dueDate ? new Date(formData.dueDate) : new Date()}
-              mode="date"
-              display="default"
-              onChange={(event, date) => {
-                setShowDatePicker(false);
-                date && setFormData({ ...formData, dueDate: date.toISOString() });
+          {Platform.OS === 'web' ? (
+            // Web native date input
+            <input
+              type="date"
+              value={getWebDateValue()}
+              onChange={(e) =>
+                setFormData({ ...formData, dueDate: e.target.value ? new Date(e.target.value).toISOString() : undefined })
+              }
+              style={{
+                  backgroundColor: theme.colors.background,
+                  padding: theme.spacing.m,
+                  borderRadius: theme.radii.m,
+                  marginBottom: theme.spacing.m,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  color: "white"
               }}
             />
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateButtonText}>
+                  {formData.dueDate
+                    ? new Date(formData.dueDate).toLocaleDateString()
+                    : 'Selecionar Data'}
+                </Text>
+              </TouchableOpacity>
+
+              {showDatePicker && (
+                <DateTimePicker
+                  value={formData.dueDate ? new Date(formData.dueDate) : new Date()}
+                  mode="date"
+                  display="default"
+                  onChange={(event, date) => {
+                    setShowDatePicker(false);
+                    if (date) {
+                      setFormData({ ...formData, dueDate: date.toISOString() });
+                    }
+                  }}
+                />
+              )}
+            </>
           )}
 
           <Picker
-            selectedValue={formData.type}
-            onValueChange={(value) => setFormData({ ...formData, type: value })}
+            selectedValue={formData.category}
+            onValueChange={(value) => setFormData({ ...formData, category: value })}
             style={styles.picker}
             dropdownIconColor={theme.colors.text}
             itemStyle={styles.pickerItem}
@@ -106,6 +188,35 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             <Picker.Item label="Outros" value="others" />
           </Picker>
 
+
+          <Picker
+            selectedValue={formData.recurrence}
+            onValueChange={handlePickerChange}
+            style={styles.picker}
+            dropdownIconColor={theme.colors.text}
+            itemStyle={styles.pickerItem}
+          >
+            <Picker.Item label="Selecione Periodicidade" value={null} />
+            <Picker.Item label="Não se repete" value="0" />
+            <Picker.Item label="A cada dia" value="1" />
+            <Picker.Item label="A cada semana" value="7" />
+            <Picker.Item label="A cada mês" value="30" />
+            <Picker.Item label="A cada semestre" value="180" />
+            <Picker.Item label="A cada ano" value="365" />
+            <Picker.Item label="Outro (personalizado)" value="custom" />
+          </Picker>
+          
+          {/* Campo visível somente se o usuário escolher "Outro" */}
+          {formData.recurrence  === 'custom' && (
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            placeholder="Digite o número de dias"
+            value={customValue}
+            onChangeText={handleCustomValueChange}
+          />
+          )}
+
           <TextInput
             style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
             placeholder="Detalhes"
@@ -116,33 +227,32 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           />
 
           <View style={styles.buttonRow}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.button, styles.saveButton]}
-              onPress={() => onSave(formData)}
+              onPress={handleSave}
             >
               <Text style={styles.buttonText}>Salvar</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
-            >
+            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose}>
               <Text style={styles.buttonText}>Cancelar</Text>
+              
             </TouchableOpacity>
           </View>
         </View>
       </View>
-      </TouchableOpacity>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  modalBackdrop: {
+    backgroundColor: 'rgba(0,0,0,0.7)',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
-
     paddingHorizontal: 50,
   },
   modalContent: {
@@ -151,6 +261,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.l,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    zIndex: 1, // Ensure content is above the Pressable
   },
   modalTitle: {
     color: theme.colors.primary,
