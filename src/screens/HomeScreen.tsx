@@ -16,6 +16,7 @@ import { fetchInitialTasks } from "../services/api";
 import { theme } from "../theme";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import TaskDetailsModal from "../components/TaskDetailsModal";
+import { Picker } from "@react-native-picker/picker";
 
 export interface Task {
   id: number;
@@ -48,7 +49,8 @@ const HomeScreen = () => {
   const [taskInput, setTaskInput] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [filter, setFilter] = useState<string | null>(null);
+const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
+const [typeFilter, setTypeFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeTasks = async () => {
@@ -72,17 +74,21 @@ const HomeScreen = () => {
     AsyncStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
 
-  const addTask = () => {
-    if (taskInput.trim()) {
-      const newTask: Task = {
-        id: Date.now(),
-        title: taskInput.trim(),
-        completed: false,
-      };
-      setTasks([...tasks, newTask]);
-      setTaskInput("");
-    }
-  };
+const addTask = () => {
+  if (taskInput.trim()) {
+    const newTask: Task = {
+      id: Date.now(),
+      title: taskInput.trim(),
+      completed: false,
+      priority: "no-urgency",
+      type: "others",
+    };
+    setTasks([...tasks, newTask]);
+    setTaskInput("");
+    setPriorityFilter(null); // Resetar filtros
+    setTypeFilter(null);
+  }
+};
 
   const removeTask = (id: number) => {
     setTasks(tasks.filter((task) => task.id !== id));
@@ -96,10 +102,11 @@ const HomeScreen = () => {
     );
   };
 
-  const filteredTasks = () => {
-    if (!filter) return tasks;
-    return tasks.filter((task) => task[filter as keyof Task]);
-  };
+const filteredTasks = tasks.filter(task => {
+  const matchesPriority = !priorityFilter || task.priority === priorityFilter;
+  const matchesType = !typeFilter || task.type === typeFilter;
+  return matchesPriority && matchesType;
+});
 
   return (
     <View style={styles.container}>
@@ -126,29 +133,44 @@ const HomeScreen = () => {
       </View>
 
       
-      <View style={styles.filterContainer}>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "priority" && styles.activeFilter,
-            ]}
-            onPress={() => setFilter(filter === "priority" ? null : "priority")}
-          >
-            <Text style={styles.filterText}>Prioridade</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.filterButton,
-              filter === "type" && styles.activeFilter,
-            ]}
-            onPress={() => setFilter(filter === "type" ? null : "type")}
-          >
-            <Text style={styles.filterText}>Tipo</Text>
-          </TouchableOpacity>
-        </View>
+<View style={styles.filterContainer}>
+  <View style={styles.pickerContainer}>
+    <Picker
+      selectedValue={priorityFilter}
+      onValueChange={(value) => setPriorityFilter(value)}
+      style={styles.picker}
+      dropdownIconColor={theme.colors.text}
+      mode="dropdown"
+    >
+      <Picker.Item label="Todas Prioridades" value={null} />
+      <Picker.Item label="Urgente" value="urgent" />
+      <Picker.Item label="Importante" value="important" />
+      <Picker.Item label="Lembrar" value="remember" />
+      <Picker.Item label="Sem Urgência" value="no-urgency" />
+    </Picker>
+  </View>
+
+  <View style={styles.pickerContainer}>
+    <Picker
+      selectedValue={typeFilter}
+      onValueChange={(value) => setTypeFilter(value)}
+      style={styles.picker}
+      dropdownIconColor={theme.colors.text}
+      mode="dropdown"
+    >
+      <Picker.Item label="Todos Tipos" value={null} />
+      <Picker.Item label="Educação" value="educational" />
+      <Picker.Item label="Saúde" value="health" />
+      <Picker.Item label="Profissional" value="professional" />
+      <Picker.Item label="Pessoal" value="personal" />
+      <Picker.Item label="Projetos" value="projects" />
+      <Picker.Item label="Outros" value="others" />
+    </Picker>
+  </View>
+</View>
 
       <DraggableFlatList
-        data={filteredTasks()}
+        data={filteredTasks}
         renderItem={({ item, drag }) => (
           <TaskItem
             task={item}
@@ -244,20 +266,37 @@ const styles = StyleSheet.create({
     gap: theme.spacing.s,
     marginTop: theme.spacing.m,
   },
-  filterButton: {
-    padding: theme.spacing.s,
-    borderRadius: theme.radii.m,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  activeFilter: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  filterText: {
-    color: theme.colors.text,
-    fontSize: 12,
-  },
+filterButton: {
+  padding: theme.spacing.s,
+  borderRadius: theme.radii.m,
+  borderWidth: 1,
+  borderColor: theme.colors.border,
+  backgroundColor: theme.colors.inputBackground,
+},
+activeFilter: {
+  backgroundColor: theme.colors.primary,
+  borderColor: theme.colors.primary,
+},
+filterText: {
+  color: theme.colors.text,
+  fontSize: 12,
+},
+activeFilterText: {
+  color: theme.colors.background,
+},
+pickerContainer: {
+  flex: 1,
+  backgroundColor: theme.colors.inputBackground,
+  borderRadius: theme.radii.m,
+  borderWidth: 1,
+  borderColor: theme.colors.border,
+  maxHeight: vs(50),
+},
+picker: {
+  color: theme.colors.text,
+  width: '100%',
+  height: vs(40),
+},
 });
 
 export default HomeScreen;
