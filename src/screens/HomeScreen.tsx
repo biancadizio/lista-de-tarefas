@@ -44,13 +44,14 @@ export interface Task {
   relatedTasks?: number[];
 }
 
-const HomeScreen = () => {
+const HomeScreen: React.FC  = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskInput, setTaskInput] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
-const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
-const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [notification, setNotification] = useState<string | null>(null);
 
   useEffect(() => {
     const initializeTasks = async () => {
@@ -87,6 +88,12 @@ const addTask = () => {
     setTaskInput("");
     setPriorityFilter(null); // Resetar filtros
     setTypeFilter(null);
+
+    setNotification('Tarefa adicionada: ${newTask.title}')
+    setTimeout(() => {
+      setNotification(null);
+
+    }, 5000);
   }
 };
 
@@ -101,6 +108,8 @@ const addTask = () => {
       )
     );
   };
+
+
 
 const filteredTasks = tasks.filter(task => {
   const matchesPriority = !priorityFilter || task.priority === priorityFilter;
