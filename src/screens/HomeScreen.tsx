@@ -10,6 +10,7 @@ import {
   Text,
   StatusBar,
 } from "react-native";
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TaskItem from "../components/TaskItem";
 import { fetchInitialTasks } from "../services/api";
@@ -17,6 +18,7 @@ import { theme } from "../theme";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import TaskDetailsModal from "../components/TaskDetailsModal";
 import { Picker } from "@react-native-picker/picker";
+import Toast, { BaseToast } from 'react-native-toast-message';
 
 export interface Task {
   id: number;
@@ -51,7 +53,7 @@ const HomeScreen: React.FC  = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
-  const [notification, setNotification] = useState<string | null>(null);
+
 
   useEffect(() => {
     const initializeTasks = async () => {
@@ -89,11 +91,22 @@ const addTask = () => {
     setPriorityFilter(null); // Resetar filtros
     setTypeFilter(null);
 
-    setNotification('Tarefa adicionada: ${newTask.title}')
-    setTimeout(() => {
-      setNotification(null);
-
-    }, 5000);
+    Toast.show({
+      type: "success", // Tipo da notificação (pode ser 'success', 'error', 'info')
+      text1: "Tarefa Adicionada!",
+      text2: `Tarefa: ${newTask.title}`,
+      position: "top", 
+      visibilityTime: 5000,
+      autoHide: true,
+      text1Style: {
+        fontWeight: 800,
+        fontSize: 20,
+      },
+      text2Style: {
+        fontSize: 16
+      },
+      
+    });
   }
 };
 
@@ -111,20 +124,18 @@ const addTask = () => {
 
 
 
-const filteredTasks = tasks.filter(task => {
-  const matchesPriority = !priorityFilter || task.priority === priorityFilter;
-  const matchesType = !typeFilter || task.type === typeFilter;
-  return matchesPriority && matchesType;
-});
+  const filteredTasks = tasks.filter(task => {
+    const matchesPriority = !priorityFilter || task.priority === priorityFilter;
+    const matchesType = !typeFilter || task.type === typeFilter;
+    return matchesPriority && matchesType;
+  });
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <View style={styles.header}>
         <Text style={styles.title}>Minhas Tarefas</Text>
-
         <Text style={styles.subtitle}>Gerencie suas atividades</Text>
-
       </View>
 
       <View style={styles.inputContainer}>
@@ -141,42 +152,46 @@ const filteredTasks = tasks.filter(task => {
         </TouchableOpacity>
       </View>
 
-      
-<View style={styles.filterContainer}>
-  <View style={styles.pickerContainer}>
-    <Picker
-      selectedValue={priorityFilter}
-      onValueChange={(value) => setPriorityFilter(value)}
-      style={styles.picker}
-      dropdownIconColor={theme.colors.text}
-      mode="dropdown"
-    >
-      <Picker.Item label="Todas Prioridades" value={null} />
-      <Picker.Item label="Urgente" value="urgent" />
-      <Picker.Item label="Importante" value="important" />
-      <Picker.Item label="Lembrar" value="remember" />
-      <Picker.Item label="Sem Urgência" value="no-urgency" />
-    </Picker>
-  </View>
-
-  <View style={styles.pickerContainer}>
-    <Picker
-      selectedValue={typeFilter}
-      onValueChange={(value) => setTypeFilter(value)}
-      style={styles.picker}
-      dropdownIconColor={theme.colors.text}
-      mode="dropdown"
-    >
-      <Picker.Item label="Todos Tipos" value={null} />
-      <Picker.Item label="Educação" value="educational" />
-      <Picker.Item label="Saúde" value="health" />
-      <Picker.Item label="Profissional" value="professional" />
-      <Picker.Item label="Pessoal" value="personal" />
-      <Picker.Item label="Projetos" value="projects" />
-      <Picker.Item label="Outros" value="others" />
-    </Picker>
-  </View>
-</View>
+      <View style={[styles.filterContainer, { marginBottom:20}]} >
+        <View style={styles.filterTitle}>
+          <Text style={styles.subtitle}>Prioridade:</Text>
+          <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={priorityFilter}
+            onValueChange={(value) => setPriorityFilter(value)}
+            style={styles.picker}
+            dropdownIconColor={theme.colors.text}
+            mode="dropdown"
+          >
+            <Picker.Item label="Todas Prioridades" value={null} />
+            <Picker.Item label="Urgente" value="urgent" />
+            <Picker.Item label="Importante" value="important" />
+            <Picker.Item label="Lembrar" value="remember" />
+            <Picker.Item label="Sem Urgência" value="no-urgency" />
+          </Picker>
+          </View>
+        </View>
+        <View style={styles.filterTitle}>
+          <Text style={styles.subtitle}>Tipos:</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={typeFilter}
+              onValueChange={(value) => setTypeFilter(value)}
+              style={styles.picker}
+              dropdownIconColor={theme.colors.text}
+              mode="dropdown"
+            >
+              <Picker.Item label="Todos Tipos" value={null} />
+              <Picker.Item label="Educação" value="educational" />
+              <Picker.Item label="Saúde" value="health" />
+              <Picker.Item label="Profissional" value="professional" />
+              <Picker.Item label="Pessoal" value="personal" />
+              <Picker.Item label="Projetos" value="projects" />
+              <Picker.Item label="Outros" value="others" />
+            </Picker>
+          </View>
+        </View>
+      </View>
 
       <DraggableFlatList
         data={filteredTasks}
@@ -217,8 +232,8 @@ const filteredTasks = tasks.filter(task => {
         onClose={() => setModalVisible(false)}
         allTasks={tasks}
       />
-    </View>
-  );
+    </View>//container principal
+  );//return
 };
 
 const styles = StyleSheet.create({
@@ -244,6 +259,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: theme.spacing.s,
     marginBottom: theme.spacing.l,
+
   },
   input: {
     flex: 1,
@@ -275,37 +291,49 @@ const styles = StyleSheet.create({
     gap: theme.spacing.s,
     marginTop: theme.spacing.m,
   },
-filterButton: {
-  padding: theme.spacing.s,
-  borderRadius: theme.radii.m,
-  borderWidth: 1,
-  borderColor: theme.colors.border,
-  backgroundColor: theme.colors.inputBackground,
-},
-activeFilter: {
-  backgroundColor: theme.colors.primary,
-  borderColor: theme.colors.primary,
-},
-filterText: {
-  color: theme.colors.text,
-  fontSize: 12,
-},
-activeFilterText: {
-  color: theme.colors.background,
-},
-pickerContainer: {
-  flex: 1,
-  backgroundColor: theme.colors.inputBackground,
-  borderRadius: theme.radii.m,
-  borderWidth: 1,
-  borderColor: theme.colors.border,
-  maxHeight: vs(50),
-},
-picker: {
-  color: theme.colors.text,
-  width: '100%',
-  height: vs(40),
-},
+  filterContainerPicker: {
+    flexDirection: "column",
+    gap: theme.spacing.s,
+    marginTop: theme.spacing.m,
+  },
+  filterTitle: {
+    width: '50%',
+    flexDirection: "column",
+    gap: theme.spacing.s,
+    marginTop: theme.spacing.m,
+  },
+  filterButton: {
+    padding: theme.spacing.s,
+    borderRadius: theme.radii.m,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBackground,
+  },
+  activeFilter: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  filterText: {
+    color: theme.colors.text,
+    fontSize: 12,
+  },
+  activeFilterText: {
+    color: theme.colors.background,
+  },
+  pickerContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.inputBackground,
+    borderRadius: theme.radii.m,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    maxHeight: vs(50),
+  },
+  picker: {
+    color: '#000',
+    width: '100%',
+    fontSize: 14,
+    height: vs(40),
+  },
 });
 
 export default HomeScreen;
