@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { theme } from "../theme";
+import { theme } from "../theme"; // [MUDANÇA 1] Confirmado este caminho.
 
 type ThemeColors = keyof typeof theme.colors;
 
@@ -44,9 +44,23 @@ const TaskItem: React.FC<TaskItemProps> = ({
         <Text style={styles.checkIcon}>{task.completed ? "✓" : "○"}</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.taskText, task.completed && styles.completed]}>
-        {task.title}
-      </Text>
+      {/* [MUDANÇA 2] NOVO BLOCO: taskContent - para agrupar título e meta-informações */}
+      <View style={styles.taskContent}> 
+        <Text style={[styles.taskText, task.completed && styles.completed]}>
+          {task.title}
+        </Text>
+
+        {/* [MUDANÇA 3] NOVO BLOCO: taskMetaContainer - para Tipo e Data de Vencimento */}
+        <View style={styles.taskMetaContainer}>
+          {task.type && ( // Condicionalmente exibe se 'type' existe
+            <Text style={styles.taskMetaText}>Tipo: {task.type}</Text> // [MUDANÇA 4] NOVO TEXTO: Exibe o tipo
+          )}
+          {task.dueDate && ( // Condicionalmente exibe se 'dueDate' existe
+            <Text style={styles.taskMetaText}>Vencimento: {task.dueDate}</Text> // [MUDANÇA 5] NOVO TEXTO: Exibe a data de vencimento
+          )}
+        </View>
+      </View>
+      {/* Fim da MUDANÇA 2 e MUDANÇA 3 */}
 
       {task.priority && (
         <View style={[
@@ -90,14 +104,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
+  taskContent: { // [MUDANÇA 6] NOVO ESTILO
+    flex: 1, 
+  },
   taskText: {
-    flex: 1,
     color: theme.colors.text,
     fontSize: 16,
   },
   completed: {
     textDecorationLine: "line-through",
     color: theme.colors.completedText,
+  },
+  taskMetaContainer: { // [MUDANÇA 7] NOVO ESTILO
+    flexDirection: 'row', 
+    marginTop: theme.spacing.s,
+    gap: theme.spacing.s, 
+  },
+  taskMetaText: { // [MUDANÇA 8] NOVO ESTILO
+    color: theme.colors.completedText, 
+    fontSize: 12,
   },
   deleteButton: {
     marginLeft: theme.spacing.m,

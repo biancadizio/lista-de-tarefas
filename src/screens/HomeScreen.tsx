@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-import { hs, vs, ms } from '../utils/responsive';
+import { hs, vs, ms } from '../utils/responsive'; 
 
 import {
   View,
@@ -14,12 +14,14 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import TaskItem from "../components/TaskItem";
 import { fetchInitialTasks } from "../services/api";
-import { theme } from "../theme";
+import { theme } from "../theme"; 
 import DraggableFlatList from "react-native-draggable-flatlist";
 import TaskDetailsModal from "../components/TaskDetailsModal";
 import { Picker } from "@react-native-picker/picker";
 import Toast, { BaseToast } from 'react-native-toast-message';
 import { useWindowDimensions } from "react-native";
+import CalendarView from "./CalendarView"; 
+
 
 export interface Task {
   id: number;
@@ -47,16 +49,17 @@ export interface Task {
   relatedTasks?: number[];
 }
 
-const HomeScreen: React.FC  = () => {
+const HomeScreen: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskInput, setTaskInput] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false); 
+  const [selectedDay, setSelectedDay] = useState<{ dateString: string; day: number; month: number; year: number; } | null>(null);
 
   const { width } = useWindowDimensions()
-
 
   useEffect(() => {
     const initializeTasks = async () => {
@@ -77,7 +80,14 @@ const HomeScreen: React.FC  = () => {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+    const saveTasks = async () => {
+      try {
+        await AsyncStorage.setItem("tasks", JSON.stringify(tasks));
+      } catch (error) {
+        console.error("Erro ao salvar tarefas:", error);
+      }
+    };
+    saveTasks();
   }, [tasks]);
 
 const addTask = () => {
@@ -88,14 +98,16 @@ const addTask = () => {
       completed: false,
       priority: "no-urgency",
       type: "others",
+      dueDate: undefined, 
+      details: undefined,
     };
-    setTasks([...tasks, newTask]);
+    setTasks(prevTasks => [...prevTasks, newTask]);
     setTaskInput("");
-    setPriorityFilter(null); // Resetar filtros
+    setPriorityFilter(null); 
     setTypeFilter(null);
 
     Toast.show({
-      type: "success", // Tipo da notificação (pode ser 'success', 'error', 'info')
+      type: "success", 
       text1: "Tarefa Adicionada!",
       text2: `Tarefa: ${newTask.title}`,
       position: "top", 
@@ -108,8 +120,9 @@ const addTask = () => {
       text2Style: {
         fontSize: 16
       },
-      
     });
+  } else {
+    console.log('TaskInput está vazio. Nenhuma tarefa adicionada.'); 
   }
 };
 
@@ -125,12 +138,55 @@ const addTask = () => {
     );
   };
 
+  const handleDayPress = (day: { dateString: string; day: number; month: number; year: number; }) => {
+    setSelectedDay(day);
+    Toast.show({
+    type: "info",
+    text1: "Data Selecionada!",
+    text2: `Mostrando tarefas para: ${day.dateString}`,
+    position: "top",
+    visibilityTime: 3000,
+  });
+  };
+
+  const markedDates = tasks.reduce((acc, task) => {
+    if (task.dueDate) {
+      acc[task.dueDate] = {marked: true, dotColor: theme.colors.primary}; 
+    }
+    return acc;
+  }, {} as { [key: string]: { marked: boolean; dotColor: string } });
 
 
   const filteredTasks = tasks.filter(task => {
     const matchesPriority = !priorityFilter || task.priority === priorityFilter;
     const matchesType = !typeFilter || task.type === typeFilter;
-    return matchesPriority && matchesType;
+    let matchesDate = true; 
+    if (selectedDay) { 
+        matchesDate = !!task.dueDate && task.dueDate === selectedDay.dateString;
+    } else {
+        console.log("Nenhum selectedDay.dateString (filtro de data inativo).");
+    }
+    
+    return matchesPriority && matchesType && matchesDate;
+  });
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+      if (!a.dueDate && !b.dueDate) {
+        return 0;
+      }
+      if (!a.dueDate) {
+        return 1; 
+      }
+      if (!b.dueDate) {
+        return -1; 
+      }
+
+      const dateA = new Date(a.dueDate + 'T12:00:00'); 
+      const dateB = new Date(b.dueDate + 'T12:00:00');
+
+      return dateB.getTime() - dateA.getTime();
+
+      return 0;
   });
 
   return (
@@ -145,13 +201,21 @@ const addTask = () => {
         <TextInput
           style={styles.input}
           value={taskInput}
-          onChangeText={setTaskInput}
+          onChangeText={(text) => {
+            setTaskInput(text);
+          }}
           placeholder="Adicionar nova tarefa"
           placeholderTextColor={theme.colors.completedText}
           onSubmitEditing={addTask}
         />
         <TouchableOpacity style={styles.addButton} onPress={addTask}>
           <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.calendarButton} 
+          onPress={() => setShowCalendar(!showCalendar)}
+        >
+          <Text style={styles.calendarButtonText}>📅</Text> 
         </TouchableOpacity>
       </View>
 
@@ -196,47 +260,85 @@ const addTask = () => {
         </View>
       </View>
 
-      <DraggableFlatList
-        data={filteredTasks}
-        renderItem={({ item, drag }) => (
-          <TaskItem
-            task={item}
-            onToggle={() => toggleTask(item.id)}
-            onDelete={() => removeTask(item.id)}
-            onLongPress={drag}
-            onPressDetails={() => {
-              setSelectedTask(item);
-              setModalVisible(true);
-            }}
+      {/* Renderização Condicional: Calendário OU Lista de Tarefas */}
+      {showCalendar && (
+        <View style={styles.calendarContainer}>
+          <CalendarView
+            onDayPress={handleDayPress} 
+            markedDates={markedDates}   
           />
-        )}
-        keyExtractor={(item) => item.id.toString()}
-        onDragEnd={({ data }) => setTasks(data)}
-        contentContainerStyle={styles.listContent}
-      />
+          {selectedDay && (
+            <Text style={styles.selectedDateText}>
+              Tarefas para: {selectedDay.dateString}
+              <TouchableOpacity onPress={() => setSelectedDay(null)}>
+                <Text style={styles.clearDateFilterText}> (Limpar filtro)</Text>
+              </TouchableOpacity>
+            </Text>
+          )}
+        </View>
+      )}
 
-      <TaskDetailsModal
-        visible={modalVisible}
-        task={
-          selectedTask || {
-            id: 0,
-            title: "",
-            completed: false,
-            priority: "no-urgency",
-            type: "others",
-          }
-        }
-        onSave={(updatedTask) => {
-          setTasks(
-            tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t))
-          );
-          setModalVisible(false);
-        }}
-        onClose={() => setModalVisible(false)}
-        allTasks={tasks}
-      />
-    </View>//container principal
-  );//return
+      {!showCalendar && (
+        <>
+          <DraggableFlatList
+            data={sortedTasks}
+            renderItem={({ item, drag }) => (
+              <TaskItem
+                task={item}
+                onToggle={() => toggleTask(item.id)}
+                onDelete={() => removeTask(item.id)}
+                onLongPress={drag}
+                onPressDetails={() => {
+                  setSelectedTask(item);
+                  setModalVisible(true);
+                }}
+              />
+            )}
+            keyExtractor={(item) => item.id.toString()}
+            onDragEnd={({ data }) => setTasks(data)}
+            contentContainerStyle={styles.listContent}
+          />
+
+          <TaskDetailsModal
+            visible={modalVisible}
+            task={
+              selectedTask || {
+                id: 0,
+                title: "",
+                completed: false,
+                priority: "no-urgency",
+                type: "others",
+              }
+            }
+            onSave={(updatedTask) => {
+              setTasks(
+                tasks.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+              );
+              setModalVisible(false);
+            }}
+            onClose={() => setModalVisible(false)}
+            allTasks={tasks}
+          />
+        </>
+      )}
+
+      <Toast config={toastConfig} /> 
+    </View>
+  );
+};
+
+const toastConfig = {
+  success: (props: any) => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: theme.colors.primary }}
+      contentContainerStyle={{ paddingHorizontal: theme.spacing.m }}
+      text1Style={{
+        fontSize: 15,
+        fontWeight: '400'
+      }}
+    />
+  ),
 };
 
 const styles = StyleSheet.create({
@@ -262,7 +364,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: theme.spacing.s,
     marginBottom: theme.spacing.l,
-
   },
   input: {
     flex: 1,
@@ -335,6 +436,37 @@ const styles = StyleSheet.create({
     width: '100%',
     fontSize: 14,
     height: vs(40),
+  },
+  calendarButton: {
+    backgroundColor: theme.colors.primary, 
+    width: 50, 
+    borderRadius: theme.radii.m,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: theme.spacing.s, 
+  },
+  calendarButtonText: {
+    color: theme.colors.text,
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  calendarContainer: {
+    marginBottom: theme.spacing.l, 
+    borderWidth: 1, 
+    borderColor: theme.colors.border, 
+    borderRadius: theme.radii.m, 
+    padding: theme.spacing.s, 
+  },
+  selectedDateText: {
+    color: theme.colors.text,
+    fontSize: 16,
+    marginTop: theme.spacing.s,
+    textAlign: 'center',
+  },
+  clearDateFilterText: {
+    color: theme.colors.primary,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 
