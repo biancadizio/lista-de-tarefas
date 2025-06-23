@@ -5,8 +5,11 @@ export interface Task {
     completed: boolean;
     selected?: boolean;
     priority?: "text" | "background" | "modalBackground" | "selectorBackground" | "primary" | "secondary" | "inputBackground" | "border" | "danger" | "completedText" | "urgent" | "important" | "remember" | "no-urgency";
+    category?: string;
     type?: string;
+    recurrence?: string;
     dueDate?: string;
     details?: string;
     relatedTasks?: number[];
   }
+
