@@ -19,6 +19,7 @@ import DraggableFlatList from "react-native-draggable-flatlist";
 import TaskDetailsModal from "../components/TaskDetailsModal";
 import { Picker } from "@react-native-picker/picker";
 import Toast, { BaseToast } from 'react-native-toast-message';
+import { useWindowDimensions } from "react-native";
 
 export interface Task {
   id: number;
@@ -53,6 +54,8 @@ const HomeScreen: React.FC  = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+
+  const { width } = useWindowDimensions()
 
 
   useEffect(() => {
@@ -298,7 +301,6 @@ const styles = StyleSheet.create({
   },
   filterTitle: {
     width: '50%',
-    flexDirection: "column",
     gap: theme.spacing.s,
     marginTop: theme.spacing.m,
   },
