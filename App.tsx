@@ -5,9 +5,9 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "react-native";
 import HomeScreen from "./src/screens/HomeScreen";
 import { theme } from "./src/theme";
-import {LogScreen} from "./src/screens/LogScreen"
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {LogScreen} from "./src/screens/LogScreen";
 
 export type RootStackParamList = {
   Home: undefined;
