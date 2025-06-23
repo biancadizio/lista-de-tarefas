@@ -15,6 +15,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../theme';
 import { Task } from '../types/types';
 
+
+
 interface TaskDetailsModalProps {
   visible: boolean;
   task: Task;
@@ -64,14 +66,76 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
 
  
   // Ao salvar, se for personalizado, usamos customValue como type
-  const handleSave = () => {
-    const finalType =
-      formData.recurrence === 'custom' && !isNaN(parseInt(customValue))
-        ? parseInt(customValue).toString()
-        : formData.recurrence;
+ const handleSave = () => {
+  const parsedValue = parseInt(customValue);
+
+  // Validações obrigatórias
+  if (!formData.title || formData.title.trim() === '') {
+    alert('O título da tarefa é obrigatório.');
+    return;
+  }
+
+  if (!formData.priority) {
+    alert('Selecione uma prioridade.');
+    return;
+  }
+
+  // Validação: Data dentro de 10 anos para frente e para trás
+  if (formData.dueDate) {
+    const dueDate = new Date(formData.dueDate);
+    const now = new Date();
+    const minDate = new Date(now.getFullYear() - 10, now.getMonth(), now.getDate());
+    const maxDate = new Date(now.getFullYear() + 10, now.getMonth(), now.getDate());
+
+    if (dueDate < minDate || dueDate > maxDate) {
+      alert('A data deve estar entre 10 anos atrás e 10 anos no futuro.');
+      return;
+    }
+  }
+  else{
+    alert('Digite uma data.');
+  }
+
+  if (!formData.category) {
+    alert('Selecione uma categoria.');
+    return;
+  }
+  
+  if (!formData.recurrence) {
+    alert('Selecione uma periodicidade.');
+    return;
+  }
+
+  // Validação de valor personalizado
+  if (formData.recurrence === 'custom') {
+    if (isNaN(parsedValue) || parsedValue < 0) {
+      alert('Informe um número válido maior ou igual a 0 para a recorrência.');
+      return;
+    }
+  }
+
+  const finalType =
+    formData.recurrence === 'custom'
+      ? parsedValue.toString()
+      : formData.recurrence;
 
     onSave({ ...formData, recurrence: finalType });
+
+    // Limpa os estados
+    setFormData({
+    title: '',
+    details: '',
+    priority: '',
+    category: "Selecione Categoria",
+    dueDate: undefined,
+    recurrence: "Selecione Periodicidade",
+    });
+
+    setCustomValue('');
+    setShowDatePicker(false);
+
   };
+
 
 
   const handleClose = () => {
@@ -179,7 +243,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             dropdownIconColor={theme.colors.text}
             itemStyle={styles.pickerItem}
           >
-            <Picker.Item label="Selecione Tipo" value={null} />
+            <Picker.Item label="Selecione categoria" value={null} />
             <Picker.Item label="Profissional" value="professional" />
             <Picker.Item label="Pessoal" value="personal" />
             <Picker.Item label="Saúde" value="health" />
@@ -211,7 +275,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           <TextInput
             style={styles.input}
             keyboardType="numeric"
-            placeholder="Digite o número de dias"
+            placeholder="Digite o número de dias de recorrência"
             value={customValue}
             onChangeText={handleCustomValueChange}
           />
