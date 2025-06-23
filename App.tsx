@@ -1,19 +1,27 @@
 // App.tsx
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { StatusBar } from "react-native";
 import HomeScreen from "./src/screens/HomeScreen";
 import { theme } from "./src/theme";
+import {LogScreen} from "./src/screens/LogScreen"
 import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-const Stack = createStackNavigator();
+export type RootStackParamList = {
+  Home: undefined;
+  Logs: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const App = () => {
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <NavigationContainer>
       <StatusBar backgroundColor={theme.colors.background} />
-      <Stack.Navigator
+      <Stack.Navigator initialRouteName="Home"
         screenOptions={{
           headerStyle: {
             backgroundColor: theme.colors.background,
@@ -29,8 +37,14 @@ const App = () => {
           component={HomeScreen}
           options={{ title: "Gerenciador de Tarefas" }}
         />
+        <Stack.Screen
+          name="Logs"
+          component={LogScreen}
+          options={{ title: "Log de tarefas" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
+    </GestureHandlerRootView>
   );
 };
 

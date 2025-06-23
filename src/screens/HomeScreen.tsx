@@ -17,6 +17,10 @@ import { theme } from "../theme";
 import DraggableFlatList from "react-native-draggable-flatlist";
 import TaskDetailsModal from "../components/TaskDetailsModal";
 import { Picker } from "@react-native-picker/picker";
+import { useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "../../App";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import SearchInput from "../components/SearchBar";
 
 export interface Task {
   id: number;
@@ -51,6 +55,8 @@ const HomeScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
 const [priorityFilter, setPriorityFilter] = useState<string | null>(null);
 const [typeFilter, setTypeFilter] = useState<string | null>(null);
+const [searchQuery, setSearchQuery] = useState<string>("");
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, "Home">>();
 
   useEffect(() => {
     const initializeTasks = async () => {
@@ -90,33 +96,103 @@ const addTask = () => {
   }
 };
 
+const addLog = async (log: { id: string; taskId: number; action: string; title: string; timestamp: number }) => {
+  try {
+    const existing = await AsyncStorage.getItem("taskLogs");
+    const logs = existing ? JSON.parse(existing) : [];
+
+    const existingIndex = logs.findIndex(
+      (l: any) => l.taskId === log.taskId && l.action === log.action
+    );
+
+    if (existingIndex !== -1) {
+      // Update timestamp
+      logs[existingIndex].timestamp = log.timestamp;
+    } else {
+      // Add new log
+      logs.push(log);
+    }
+
+    await AsyncStorage.setItem("taskLogs", JSON.stringify(logs));
+  } catch (e) {
+    console.error("Error saving log:", e);
+  }
+};
+
   const removeTask = (id: number) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+    setTasks((prevTasks) => {
+      const taskToComplete = prevTasks.find((task) => task.id === id);
+      if (!taskToComplete) return prevTasks;
+
+      // Logar
+      addLog({
+        id: Date.now().toString(),
+        taskId: id,
+        title: taskToComplete.title,
+        action: "deleted",
+        timestamp: Date.now(),
+      });
+
+      // Remover da lista
+      return prevTasks.filter((task) => task.id !== id);
+    });
   };
 
-  const toggleTask = (id: number) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
-  };
+const toggleTask = (id: number) => {
+  setTasks((prevTasks) => {
+    return prevTasks.map((task) => {
+      if (task.id === id) {
+        const toggledTask = { ...task, completed: !task.completed };
+
+        // Log only if marking as completed
+        if (!task.completed) {
+          addLog({
+            id: Date.now().toString(),
+            taskId: id,
+            title: task.title,
+            action: "completed",
+            timestamp: Date.now(),
+          });
+        }
+
+        return toggledTask;
+      }
+      return task;
+    });
+  });
+};
+
 
 const filteredTasks = tasks.filter(task => {
+  const matchesSearch = task.title
+    .toLowerCase()
+    .includes(searchQuery.toLowerCase());
   const matchesPriority = !priorityFilter || task.priority === priorityFilter;
   const matchesType = !typeFilter || task.type === typeFilter;
-  return matchesPriority && matchesType;
+
+  return matchesSearch && matchesPriority && matchesType;
 });
+
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
+      <TouchableOpacity style={styles.navigationButton} onPress={() => navigation.navigate("Logs")}>
+        <Text style={styles.navigationButtonText}>Ver Log</Text>
+      </TouchableOpacity>
       <View style={styles.header}>
         <Text style={styles.title}>Minhas Tarefas</Text>
 
         <Text style={styles.subtitle}>Gerencie suas atividades</Text>
 
       </View>
+
+      <SearchInput
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        placeholder="Pesquisar tarefas..."
+        placeholderTextColor={theme.colors.completedText}
+      />
 
       <View style={styles.inputContainer}>
         <TextInput
@@ -297,6 +373,17 @@ picker: {
   width: '100%',
   height: vs(40),
 },
+navigationButton: {
+    backgroundColor: theme.colors.secondary,
+    borderRadius: theme.radii.s,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start', // prevent it from stretching full width
+  },
+  navigationButtonText: {
+    color: theme.colors.text,
+    fontSize: 16,
+  }
 });
 
 export default HomeScreen;

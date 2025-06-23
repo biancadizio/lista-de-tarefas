@@ -1,6 +1,6 @@
 // src/components/TaskDetailsModal.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, Pressable } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { theme } from '../theme';
@@ -36,12 +36,10 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
       transparent
       onRequestClose={onClose}
     >
-        <TouchableOpacity 
-    style={styles.modalOverlay}
-    activeOpacity={1} // Mantém a opacidade em 1 para não mostrar efeito visual
-    onPressOut={onClose} // Fecha o modal ao clicar fora
-  >
+
+
       <View style={styles.modalOverlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose}/> 
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Detalhes da Task</Text>
 
@@ -132,7 +130,6 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           </View>
         </View>
       </View>
-      </TouchableOpacity>
     </Modal>
   );
 };
@@ -151,6 +148,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing.l,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    zIndex: 1,
   },
   modalTitle: {
     color: theme.colors.primary,
