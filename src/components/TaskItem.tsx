@@ -8,6 +8,7 @@ type ThemeColors = keyof typeof theme.colors;
 interface Task {
   id: number;
   title: string;
+  completed: boolean;
   selected?: boolean;
   priority?: ThemeColors;
   category?: string; 
@@ -42,12 +43,24 @@ const TaskItem: React.FC<TaskItemProps> = ({
       ]}
     >
       <TouchableOpacity onPress={onToggle} style={styles.checkBox}>
-        <Text style={styles.checkIcon}>{"✓"}</Text>
+        <Text style={styles.checkIcon}>{task.completed ? "✓" : "○"}</Text>
       </TouchableOpacity>
 
-      <Text style={[styles.taskText, /*styles.completed*/]}>
-        {task.title}
-      </Text>
+      <View style={styles.taskContent}> 
+        <Text style={[styles.taskText, task.completed && styles.completed]}>
+          {task.title}
+        </Text>
+
+        <View style={styles.taskMetaContainer}>
+          {task.type && (
+            <Text style={styles.taskMetaText}>Tipo: {task.type}</Text>
+          )}
+          {task.dueDate && (
+            <Text style={styles.taskMetaText}>Vencimento: {task.dueDate}</Text>
+          )}
+        </View>
+      </View>
+      {/* Fim da MUDANÇA 2 e MUDANÇA 3 */}
 
       {task.priority && (
         <View style={[
@@ -91,14 +104,25 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
+  taskContent: {
+    flex: 1, 
+  },
   taskText: {
-    flex: 1,
     color: theme.colors.text,
     fontSize: 16,
   },
   completed: {
     textDecorationLine: "line-through",
     color: theme.colors.completedText,
+  },
+  taskMetaContainer: { 
+    flexDirection: 'row', 
+    marginTop: theme.spacing.s,
+    gap: theme.spacing.s, 
+  },
+  taskMetaText: { 
+    color: theme.colors.completedText, 
+    fontSize: 12,
   },
   deleteButton: {
     marginLeft: theme.spacing.m,
@@ -132,8 +156,3 @@ const styles = StyleSheet.create({
 });
 
 export default TaskItem;
-
-
-
-
-

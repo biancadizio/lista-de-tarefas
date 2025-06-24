@@ -6,8 +6,10 @@ import { StatusBar } from "react-native";
 import HomeScreen from "./src/screens/HomeScreen";
 import { theme } from "./src/theme";
 import 'react-native-gesture-handler';
+import Toast from 'react-native-toast-message';
 
 const Stack = createStackNavigator();
+
 
 const App = () => {
   return (
@@ -30,6 +32,7 @@ const App = () => {
           options={{ title: "Gerenciador de Tarefas" }}
         />
       </Stack.Navigator>
+      <Toast />
     </NavigationContainer>
   );
 };

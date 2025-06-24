@@ -1,4 +1,3 @@
-// src/components/TaskDetailsModal.tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -11,9 +10,9 @@ import {
   Platform,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker'; 
 import { theme } from '../theme';
-import { Task } from '../types/types';
+import { Task } from '../types/types'; 
 
 
 
@@ -153,41 +152,52 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
 
   // Ver questão da periodicidade
   
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(false); 
+
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      setFormData({ ...formData, dueDate: formattedDate });
+    }
+  };
+
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
-      onRequestClose={handleClose}
+      transparent
+      onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        {/* Press outside modal to close */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1} 
+          onPressOut={onClose} 
+        >
+          {/* REMOVIDO: onStartShouldSetResponder={() => true} do View styles.modalContent */}
+          <View style={styles.modalContent}> 
+            <Text style={styles.modalTitle}>Detalhes da Task</Text>
 
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Detalhes da Task</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Título"
+              placeholderTextColor={theme.colors.completedText}
+              value={formData.title}
+              onChangeText={(text) => setFormData({ ...formData, title: text })}
+            />
 
-          <TextInput
-            style={styles.input}
-            placeholder="Título"
-            placeholderTextColor={theme.colors.completedText}
-            value={formData.title}
-            onChangeText={(text) => setFormData({ ...formData, title: text })}
-          />
-
-          <Picker
-            selectedValue={formData.priority}
-            onValueChange={(value) => setFormData({ ...formData, priority: value })}
-            style={styles.picker}
-            dropdownIconColor={theme.colors.text}
-            itemStyle={styles.pickerItem}
-          >
-            <Picker.Item label="Selecione Prioridade" value={null} />
-            <Picker.Item label="Urgente" value="urgent" />
-            <Picker.Item label="Importante" value="important" />
-            <Picker.Item label="Lembrar" value="remember" />
-            <Picker.Item label="Sem Urgência" value="no-urgency" />
-          </Picker>
+            <Picker
+              selectedValue={formData.priority}
+              onValueChange={(value) => setFormData({ ...formData, priority: value })}
+              style={styles.picker}
+              dropdownIconColor={theme.colors.text}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Selecione Prioridade" value={null} />
+              <Picker.Item label="Urgente" value="urgent" />
+              <Picker.Item label="Importante" value="important" />
+              <Picker.Item label="Lembrar" value="remember" />
+              <Picker.Item label="Sem Urgência" value="no-urgency" />
+            </Picker>
 
           {Platform.OS === 'web' ? (
             // Web native date input
@@ -236,21 +246,21 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             </>
           )}
 
-          <Picker
-            selectedValue={formData.category}
-            onValueChange={(value) => setFormData({ ...formData, category: value })}
-            style={styles.picker}
-            dropdownIconColor={theme.colors.text}
-            itemStyle={styles.pickerItem}
-          >
-            <Picker.Item label="Selecione categoria" value={null} />
-            <Picker.Item label="Profissional" value="professional" />
-            <Picker.Item label="Pessoal" value="personal" />
-            <Picker.Item label="Saúde" value="health" />
-            <Picker.Item label="Educacional" value="educational" />
-            <Picker.Item label="Projetos" value="projects" />
-            <Picker.Item label="Outros" value="others" />
-          </Picker>
+            <Picker
+              selectedValue={formData.type}
+              onValueChange={(value) => setFormData({ ...formData, type: value })}
+              style={styles.picker}
+              dropdownIconColor={theme.colors.text}
+              itemStyle={styles.pickerItem}
+            >
+              <Picker.Item label="Selecione Tipo" value={null} />
+              <Picker.Item label="Profissional" value="professional" />
+              <Picker.Item label="Pessoal" value="personal" />
+              <Picker.Item label="Saúde" value="health" />
+              <Picker.Item label="Educacional" value="educational" />
+              <Picker.Item label="Projetos" value="projects" />
+              <Picker.Item label="Outros" value="others" />
+            </Picker>
 
 
           <Picker
@@ -290,21 +300,23 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
             onChangeText={(text) => setFormData({ ...formData, details: text })}
           />
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, styles.saveButton]}
-              onPress={handleSave}
-            >
-              <Text style={styles.buttonText}>Salvar</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity 
+                style={[styles.button, styles.saveButton]}
+                onPress={() => onSave(formData)}
+              >
+                <Text style={styles.buttonText}>Salvar</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose}>
-              <Text style={styles.buttonText}>Cancelar</Text>
-              
-            </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.button, styles.cancelButton]}
+                onPress={onClose}
+              >
+                <Text style={styles.buttonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </View>
+        </TouchableOpacity>
     </Modal>
   );
 };
@@ -359,7 +371,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
     fontSize: 16,
   },
-  dateButton: {
+  dateButton: { 
     backgroundColor: theme.colors.background,
     padding: theme.spacing.m,
     borderRadius: theme.radii.m,
@@ -370,6 +382,24 @@ const styles = StyleSheet.create({
   dateButtonText: {
     color: theme.colors.text,
     fontSize: 16,
+  },
+  dateInputContainer: { 
+    marginBottom: theme.spacing.m,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.radii.m,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+  },
+  webDateInput: { 
+    backgroundColor: 'transparent', 
+    color: theme.colors.text,
+    padding: theme.spacing.m,
+    fontSize: 16,
+    borderWidth: 0, 
+    width: '100%',
+    height: 50, 
+    boxSizing: 'border-box',
   },
   buttonRow: {
     flexDirection: 'row',
